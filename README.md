@@ -2,9 +2,11 @@
 
 ## Funciones
 
-- `initiate_data_processing`(**Cloud Storage**): obtención de datos de nuevo fichero
+- `handle_storage_uploads`(**Cloud Storage**): 
+    - Pasa el control a `perform_feature_extraction` si hay un nuevo fichero de lecturas de acelerómetro
+    - Pasa el control a `TBD` si hay un nuevo fichero de caracterísitcas
 ```
-gcloud functions deploy initiate_data_processing --region europe-west1 --runtime python37 --trigger-resource activity-detection-55cc7.appspot.com --trigger-event google.storage.object.finalize
+gcloud functions deploy handle_storage_uploads --region europe-west1 --runtime python37 --trigger-resource activity-detection-55cc7.appspot.com --trigger-event google.storage.object.finalize
 ```
 - `perform_feature_extraction`(**Pub/Sub**): extracción de características
 ```
