@@ -1,0 +1,3 @@
+google-cloud-storage
+firebase_admin
+tensorflow>=2.1.0
