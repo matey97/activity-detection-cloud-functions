@@ -3,31 +3,36 @@ from google.cloud import storage
 from firebase_admin import ml
 import tensorflow as tf
 
-bucket = 'activity-detection-55cc7.appspot.com'
+BUCKET = 'activity-detection-55cc7.appspot.com'
+
+MODEL_NAME = 'mi_modelo_pocho'
+KERAS_STORAGE_MODEL = 'saved_model.h5'
+KERAS_LOCAL_MODEL = '/tmp/saved_model.h5'
+TFLITE_MODEL = '/tmp/model.tflite'
 
 
 def test_firebase_ml(request):
     firebase_admin.initialize_app(
         credential=firebase_admin.credentials.Certificate('./serviceAccount.json'),
-        options={'storageBucket': bucket})
+        options={'storageBucket': BUCKET})
 
     storage_client = storage.Client()
-    storage_bucket = storage_client.get_bucket(bucket)
+    storage_bucket = storage_client.get_bucket(BUCKET)
 
     ## Check si existe el modelo
     ##   - Si existe cargarlo y entrenar con nuevos datos
     ##   - Si no existe crear uno nuevo y entrenar
 
-    firebase_models = ml.list_models(list_filter="display_name = mi_modelo_pocho").iterate_all()
+    firebase_models = ml.list_models(list_filter="display_name = {0}".format(MODEL_NAME)).iterate_all()
     custom_model = None
     for model in firebase_models:
         custom_model = model
 
     if custom_model is not None:
-        blob = storage_client.get_bucket(bucket).get_blob('saved_model.h5')
-        blob.download_to_filename('/tmp/old_saved_model.h5')
+        blob = storage_bucket.get_blob(KERAS_STORAGE_MODEL)
+        blob.download_to_filename(KERAS_LOCAL_MODEL)
 
-        model_binary = tf.keras.models.load_model('/tmp/old_saved_model.h5')
+        model_binary = tf.keras.models.load_model(KERAS_LOCAL_MODEL)
     else:
         model_binary = tf.keras.models.Sequential(
             [tf.keras.layers.Dense(units=1, input_shape=[1])])
@@ -38,15 +43,15 @@ def test_firebase_ml(request):
 
     model_binary.fit(x, y, epochs=3)
 
-    model_binary.save('/tmp/new_saved_model.h5')
-    blob = storage_bucket.blob('saved_model.h5')
-    blob.upload_from_filename('/tmp/new_saved_model.h5')
+    model_binary.save(KERAS_LOCAL_MODEL)
+    blob = storage_bucket.blob(KERAS_STORAGE_MODEL)
+    blob.upload_from_filename(KERAS_LOCAL_MODEL)
 
     # TFlite conversion and quantization
     converter = tf.lite.TFLiteConverter.from_keras_model(model_binary)
     #converter.optimizations = [tf.lite.Optimize.DEFAULT]
     tflite_model = converter.convert()
-    open('/tmp/modelo_pocho.tflite', 'wb').write(tflite_model)
+    open(TFLITE_MODEL, 'wb').write(tflite_model)
 
     # Print input and output shape and type
     # interpreter = tf.lite.Interpreter(model_content=tflite_model)
@@ -64,13 +69,13 @@ def test_firebase_ml(request):
 
     # Publish model to FirebaseML
 
-    source = ml.TFLiteGCSModelSource.from_tflite_model_file('/tmp/modelo_pocho.tflite')
+    source = ml.TFLiteGCSModelSource.from_tflite_model_file(TFLITE_MODEL)
     model_format = ml.TFLiteFormat(model_source=source)
     if custom_model is not None:
         custom_model.model_format = model_format
         model_to_publish = ml.update_model(custom_model)
     else:
-        custom_model = ml.Model(display_name='mi_modelo_pocho', model_format=model_format, tags=["activity_detection"])
+        custom_model = ml.Model(display_name=MODEL_NAME, model_format=model_format, tags=["activity_detection"])
         model_to_publish = ml.create_model(custom_model)
 
     ml.publish_model(model_to_publish.model_id)
