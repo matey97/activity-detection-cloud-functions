@@ -72,7 +72,7 @@ def to_series(data, index):
 
 
 def angular_function(a, b):
-    return (np.arctan2(a / 9.8, b / 9.81) * 180 / np.pi).mean()
+    return (np.arctan2(a / 9.81, b / 9.81) * 180 / np.pi).mean()
 
 
 def pitch_and_roll(window):
