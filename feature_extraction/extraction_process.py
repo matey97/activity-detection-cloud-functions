@@ -10,7 +10,7 @@ step_size = 25
 def get_features_dataset_from_raw(data, gt):
     df_windowed = windows(data, window_size, step_size)
     df_features = extract_features(df_windowed, data.shape[0], window_size, step_size)
-    df_norm = normalize(df_features)
+    df_norm = df_features.apply(normalize, axis=1)
     df_norm['CLASS'] = gt
 
     return df_norm
