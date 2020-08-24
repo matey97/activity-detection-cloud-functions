@@ -15,7 +15,7 @@ Cuando el fichero almacenado se corresponde con un fichero de datos en crudo de 
 `perform_feature_extraction`, la cual extrae las características de los datos en crudo y las alamcena en otro 
 fichero en **Cloud Storage**
 
-Cuando el fichero almacenado se corresponde con un fichero de características, se lanza la función `TBD`, la cual 
+Cuando el fichero almacenado se corresponde con un fichero de características, se lanza la función `train_model`, la cual 
 emplea dichas caracteristicas para entrenar un modelo de Machine Learning y publicarlo en 
 [**Firebase Machine Learning**](https://firebase.google.com/docs/ml) para su posterior uso en dispositivos móviles.
 
@@ -23,7 +23,7 @@ emplea dichas caracteristicas para entrenar un modelo de Machine Learning y publ
 
 - `handle_storage_uploads`(**Cloud Storage**): 
     - Pasa el control a `perform_feature_extraction` si hay un nuevo fichero de lecturas de acelerómetro
-    - Pasa el control a `TBD` si hay un nuevo fichero de caracterísitcas
+    - Pasa el control a `train_model` si hay un nuevo fichero de caracterísitcas
 ```
 gcloud functions deploy handle_storage_uploads
     --region europe-west1 
@@ -38,10 +38,11 @@ gcloud functions deploy perform_feature_extraction
     --runtime python37 
     --trigger-topic new-data
 ```
-- `TBD` (**Pub/Sub**): entrenamiento y publicación del modelo de Machine Learning
+- `train_model` (**Pub/Sub**): entrenamiento y publicación del modelo de Machine Learning
 ```
-gcloud functions deploy TBD
+gcloud functions deploy train_model
     --region europe-west1
     --runtime python37 
-    --trigger-topic TBD
+    --memory 512MB
+    --trigger-topic start-training
 ```
